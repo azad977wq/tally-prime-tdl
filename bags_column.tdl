@@ -1,0 +1,153 @@
+[#TallyObjectCreation]
+
+; ==========================================
+; Bags Column Configuration for Tally Prime 6.0
+; Purpose: Add Bags column to Purchase, Sales & Stock Journal vouchers
+; and display in Godown Summary report
+; ==========================================
+
+; ==========================================
+; VOUCHER MASTER CONFIGURATION
+; ==========================================
+
+[TDL: Voucher Master: Purchase]
+Field: Bags Quantity Field List | FVirtualField
+Object: Bags Quantity
+
+[TDL: Voucher Master: Sales]
+Field: Bags Quantity Field List | FVirtualField
+Object: Bags Quantity
+
+[TDL: Voucher Master: Stock Journal]
+Field: Bags Quantity Field List | FVirtualField
+Object: Bags Quantity
+
+; ==========================================
+; STOCK ITEM CONFIGURATION
+; ==========================================
+
+[Field: Bags Quantity Field List]
+Use: Bags Quantity
+Set As: Bags Quantity
+
+[Object: Bags Quantity]
+Type: Quantity
+Quantity Type: Bags
+Full Form: Bags
+Short Form: Bags
+Symbol: Bags
+Decimals: 0
+
+; ==========================================
+; LEDGER ENTRY CONFIGURATION
+; ==========================================
+
+[TDL: Ledger Entry: Purchase]
+Field: Bags Quantity | FVirtualField
+
+[TDL: Ledger Entry: Sales]
+Field: Bags Quantity | FVirtualField
+
+[TDL: Ledger Entry: Stock Journal]
+Field: Bags Quantity | FVirtualField
+
+; ==========================================
+; INVENTORY VOUCHER LINES
+; ==========================================
+
+[Line: Purchase Line]
+Field: Item Name, Item Quantity, Bags Quantity, Rate, Amount
+Align: Left, Right, Right, Right, Right
+
+[Line: Sales Line]
+Field: Item Name, Item Quantity, Bags Quantity, Rate, Amount
+Align: Left, Right, Right, Right, Right
+
+[Line: Stock Journal Line]
+Field: Item Name, Item Quantity, Bags Quantity
+Align: Left, Right, Right
+
+; ==========================================
+; GODOWN SUMMARY REPORT CONFIGURATION
+; ==========================================
+
+[Report: Godown Summary With Bags]
+Title: Godown Summary with Bags
+Form: Godown Summary Form With Bags
+Filter: Godown Summary Filter
+Summary: Godown Summary
+Print Layout: Godown Summary Layout
+Use Method: Godown Summary Method
+
+[Form: Godown Summary Form With Bags]
+Part: Godown Header Part
+Part: Godown Summary Line Part
+
+[Part: Godown Header Part]
+Line: Godown Header Line
+Repeat: Godown Summary
+Filters: Godown Summary Filter
+
+[Line: Godown Header Line]
+Field: Item Name, Godown Name, Unit
+
+[Part: Godown Summary Line Part]
+Line: Godown Summary Detail Line
+Repeat: Godown Summary
+
+[Line: Godown Summary Detail Line]
+Field: Item Name, Opening Quantity, Opening Bags, Inward Quantity, Inward Bags, Outward Quantity, Outward Bags, Closing Quantity, Closing Bags
+Align: Left, Right, Right, Right, Right, Right, Right, Right, Right
+
+; ==========================================
+; COLUMN DEFINITIONS FOR GODOWN SUMMARY
+; ==========================================
+
+[Column: Opening Bags]
+Use: Bags Quantity
+Set As: Opening Bags Value
+Total: Yes
+
+[Column: Inward Bags]
+Use: Bags Quantity
+Set As: Inward Bags Value
+Total: Yes
+
+[Column: Outward Bags]
+Use: Bags Quantity
+Set As: Outward Bags Value
+Total: Yes
+
+[Column: Closing Bags]
+Use: Bags Quantity
+Set As: Closing Bags Value
+Total: Yes
+
+; ==========================================
+; FILTER CONFIGURATION
+; ==========================================
+
+[Filter: Godown Summary Filter]
+Title: Godown Summary Filter
+Selection: Godown
+Selection: Item
+
+; ==========================================
+; SUMMARY CONFIGURATION
+; ==========================================
+
+[Summary: Godown Summary]
+Group By: Godown
+Sub Group By: Item
+Line: Godown Summary Line
+
+[Line: Godown Summary Line]
+Field: Item Name
+Aggregate: Opening Quantity, Opening Bags
+Aggregate: Inward Quantity, Inward Bags
+Aggregate: Outward Quantity, Outward Bags
+Aggregate: Closing Quantity, Closing Bags
+
+; ==========================================
+; END OF CONFIGURATION
+; ==========================================
