@@ -1,70 +1,188 @@
-[#TallyObjectCreation]
+;===============================================================================
+; RiceMill_ManualBags_For_TallyPrime.tdl
+; উদ্দেশ্য:
+;   TallyPrime-এ Alternate Unit-এর fixed conversion ছাড়া "Bags" (ব্যাগ সংখ্যা)
+;   ম্যানুয়ালি এন্ট্রি করার ব্যবস্থা করা।
+;
+; কীভাবে কাজ করবে:
+;   - Stock Item-এর Base Unit আপনি "মন"/Kg (যেটা আপনার স্টক মেইনটেইন করবেন) রাখবেন
+;   - Purchase/Sales-এ Quantity ফিল্ডে মোট মন (বা Kg) দিবেন
+;   - পাশাপাশি "Bags" ফিল্ডে ব্যাগ সংখ্যা (১০০, ১২০ ইত্যাদি) আলাদা করে লিখবেন
+;
+; নোট:
+;   Tally-এর native Alternate Unit সবসময় fixed conversion চায়।
+;   এই TDL-এ "Bags" আলাদা UDF হিসেবে রাখা হচ্ছে—তাই conversion fixed হবে না।
+;===============================================================================
 
-; Bags Column Configuration for Tally Prime 6.0
+[System: UDF]
+    RM_Bags    : Number : 10000
 
-[Line: Item Line]
-Field: Item Name, Item Quantity, Bags
-Align: Left, Right, Right
+;------------------------------
+; Voucher inventory line এ Bags ইনপুট ফিল্ড যোগ
+;------------------------------
 
-[Column: Bags]
-Use: Quantity Type
-Type: Number
-Width: 10
-Total: Yes
+[Field: RM Bags] ; (পুরোনো নাম—compatibility)
+    Use         : Number Field
+    Storage     : RM_Bags
+    Set Always  : Yes
+    Width       : 8
+    Align       : Right
 
-[Form: Purchase Form]
-Part: Purchase Header
-Part: Purchase Line Part
+[Field: RMBagsValue] ; (বর্তমান/ব্যবহৃত ফিল্ড)
+    Use         : Number Field
+    Storage     : RM_Bags
+    Set Always  : Yes
+    Width       : 8
+    Align       : Right
 
-[Part: Purchase Line Part]
-Line: Item Line
-Repeat: Item
+[Field: RM Bags Unit]
+    Use       : Name Field
+    Set As    : "ব্যাগ"
+    Width     : 5
+    Align     : Left
+    Skip      : Yes
 
-[Form: Sales Form]
-Part: Sales Header
-Part: Sales Line Part
+;------------------------------------------------------------
+; TallyPrime Item Invoice স্ক্রিনে কলাম দেখানোর জন্য
+; (Purchase/Sales → Item Invoice)
+;------------------------------------------------------------
 
-[Part: Sales Line Part]
-Line: Item Line
-Repeat: Item
+[Field: RM Bags Title]
+    Use       : Name Field
+    Set As    : "Bags"
+    Width     : 8
+    Align     : Right
+    Skip      : Yes
 
-[Report: Godown Summary with Bags]
-Title: Godown Summary with Bags
-Form: Godown Form
-Filter: Godown Filter
+[Field: RM Bags Unit Title]
+    Use       : Name Field
+    Set As    : ""
+    Width     : 5
+    Skip      : Yes
 
-[Form: Godown Form]
-Part: Godown Summary Part
+; Heading line-এ "Bags" শিরোনাম
+[#Line: EI ColumnOne]
+    Add : Right Field : Before : VCH QtyTitle : RM Bags Title
+    Add : Right Field : After  : RM Bags Title : RM Bags Unit Title
+    ; Stock Journal (এখানে Quantity title হিসেবে VCH BilledQtyTitle থাকে)
+    Add : Fields      : Before : VCH BilledQtyTitle : RM Bags Title
+    Add : Fields      : After  : RM Bags Title : RM Bags Unit Title
 
-[Part: Godown Summary Part]
-Line: Godown Line
-Repeat: Stock
+; Entry line-এ Bags ইনপুট (Qty কলামের পাশেই)
+[#Line: EI InvInfo]
+    Add : Right Field : Before : VCH ActualQty : RMBagsValue
+    Add : Right Field : After  : RMBagsValue : RM Bags Unit
+    ; Stock Journal Source (Consumption) Qty field tooltip: VCH BilledQty
+    Add : Fields      : Before : VCH BilledQty : RMBagsValue
+    Add : Fields      : After  : RMBagsValue : RM Bags Unit
+    ; Stock Journal Destination (Production) Qty field tooltip: VCHSTKJrnl BilledQty
+    Add : Fields      : Before : VCHSTKJrnl BilledQty : RMBagsValue
+    Add : Fields      : After  : RMBagsValue : RM Bags Unit
 
-[Line: Godown Line]
-Field: Item Name, Opening Balance, Opening Bags, Inward, Inward Bags, Outward, Outward Bags, Closing, Closing Bags
-Align: Left, Right, Right, Right, Right, Right, Right, Right, Right
+; Purchase/Sales voucher-এ Total Bags দেখানোর জন্য
+[#Part: EI InvInfo]
+    Total : RMBagsValue
 
-[Column: Opening Bags]
-Type: Number
-Width: 10
-Total: Yes
+[Field: RMBagsTotal]
+    Use        : Number Field
+    Set As     : $$Total:RMBagsValue
+    Set Always : Yes
+    Width      : 8
+    Align      : Right
+    Skip       : Yes
 
-[Column: Inward Bags]
-Type: Number
-Width: 10
-Total: Yes
+[Field: RMBagsTotalUnit]
+    Use        : Name Field
+    Set As     : "ব্যাগ"
+    Width     : 5
+    Align      : Left
+    Skip       : Yes
 
-[Column: Outward Bags]
-Type: Number
-Width: 10
-Total: Yes
+[#Field: EI QtyTotal]
+    Add : Field : Before : EI BilledQtyTotal : RMBagsTotal
+    Add : Field : After  : RMBagsTotal : RMBagsTotalUnit
 
-[Column: Closing Bags]
-Type: Number
-Width: 10
-Total: Yes
+;------------------------------------------------------------
+; Stock Journal (Alt+F7) – Default TDL References থেকে পাওয়া Line নাম
+;   Source (Consumption) side → Line: SJDetailsB (Field: VCH BilledQty)
+;   Destination (Production) side → Line: GTRNDetails (Field: VCHSTKJrnl BilledQty)
+;------------------------------------------------------------
 
-[Filter: Godown Filter]
-Title: Select Godown
-Selection: Godown
-Selection: Item
+[#Line: SJDetailsB]
+    ; কিছু স্ক্রিনে Fields/Left Fields/Right Fields আলাদা হতে পারে—তাই তিনভাবেই add করা হলো
+    Add : Fields       : Before : VCH BilledQty : RMBagsValue
+    Add : Left Fields  : Before : VCH BilledQty : RMBagsValue
+    Add : Right Fields : Before : VCH BilledQty : RMBagsValue
+
+    ; Destination field যদি এই Line-এ থাকে, সেক্ষেত্রে Bags এখানেও বসবে
+    Add : Fields       : Before : VCHSTKJrnl BilledQty : RMBagsValue
+    Add : Left Fields  : Before : VCHSTKJrnl BilledQty : RMBagsValue
+    Add : Right Fields : Before : VCHSTKJrnl BilledQty : RMBagsValue
+
+    Add : Fields       : After  : RMBagsValue : RM Bags Unit
+    Add : Left Fields  : After  : RMBagsValue : RM Bags Unit
+    Add : Right Fields : After  : RMBagsValue : RM Bags Unit
+
+[#Line: GTRNDetails]
+    Add : Fields       : Before : VCHSTKJrnl BilledQty : RMBagsValue
+    Add : Left Fields  : Before : VCHSTKJrnl BilledQty : RMBagsValue
+    Add : Right Fields : Before : VCHSTKJrnl BilledQty : RMBagsValue
+
+    Add : Fields       : After  : RMBagsValue : RM Bags Unit
+    Add : Left Fields  : After  : RMBagsValue : RM Bags Unit
+    Add : Right Fields : After  : RMBagsValue : RM Bags Unit
+
+; Destination (Production) side-এর জন্য আপনার Reference list অনুযায়ী Line: SJDetailsD
+[#Line: SJDetailsD]
+    Add : Fields       : Before : VCHSTKJrnl BilledQty : RMBagsValue
+    Add : Left Fields  : Before : VCHSTKJrnl BilledQty : RMBagsValue
+    Add : Right Fields : Before : VCHSTKJrnl BilledQty : RMBagsValue
+
+    Add : Fields       : After  : RMBagsValue : RM Bags Unit
+    Add : Left Fields  : After  : RMBagsValue : RM Bags Unit
+    Add : Right Fields : After  : RMBagsValue : RM Bags Unit
+
+;------------------------------------------------------------
+; Stock Journal-এ Total Bags দেখানোর জন্য (Source + Destination দুই পাশেই)
+;------------------------------------------------------------
+
+[Field: RMBagsSJTotalLabel]
+    Use    : Name Field
+    Set As : "মোট ব্যাগ:"
+    Width  : 10
+    Align  : Right
+
+[Field: RMBagsSJTotalValue]
+    Use        : Number Field
+    Set As     : $$Total:RMBagsValue
+    Set Always : Yes
+    Width      : 8
+    Align      : Right
+    Skip       : Yes
+
+[Field: RMBagsSJTotalUnit]
+    Use    : Name Field
+    Set As : "ব্যাগ"
+    Width  : 5
+    Align  : Left
+    Skip   : Yes
+
+[Line: RMBagsSJTotalLine]
+    Fields : RMBagsSJTotalLabel, RMBagsSJTotalValue, RMBagsSJTotalUnit
+
+[#Part: SJOut]
+    Total : RMBagsValue
+    Add   : Bottom Lines : RMBagsSJTotalLine
+
+[#Part: SJIn]
+    Total : RMBagsValue
+    Add   : Bottom Lines : RMBagsSJTotalLine
+
+;------------------------------
+; নোট:
+;   UDF হিসেবে Bags সংরক্ষণ হবে। চাইলে পরে কাস্টম রিপোর্ট/প্রিন্ট ফরম্যাটেও
+;   দেখানোর ব্যবস্থা করে দেওয়া যাবে।
+;------------------------------
+;===============================================================================
+; END
+;===============================================================================
